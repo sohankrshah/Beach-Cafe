@@ -3,7 +3,15 @@ import { GoogleGenAI, Modality } from "@google/genai";
 import { MENU_DATA } from "../constants";
 
 // Always use the recommended initialization pattern for GoogleGenAI
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+function createGeminiClient() {
+  const apiKey = import.meta.env.VITE_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("VITE_API_KEY is missing");
+  }
+
+  return new GoogleGenAI({ apiKey });
+}
 
 const SYSTEM_INSTRUCTION = `
 You are the Wanderplate Concierge, a highly sophisticated AI assistant for Wanderplate, an upscale restaurant specializing in global culinary exploration and farm-to-table excellence.
@@ -29,6 +37,7 @@ Keep your responses concise, evocative, and helpful. Use markdown for formatting
 
 export async function getConciergeResponse(userMessage: string, chatHistory: { role: 'user' | 'assistant', content: string }[]) {
   try {
+    const ai = createGeminiClient();
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: [
@@ -58,7 +67,7 @@ export async function generateItemSpeech(itemName: string, description: string) 
   try {
     const prompt = `Say in a sophisticated, calm, and evocative storyteller voice: 
     "Discover the ${itemName}. ${description}"`;
-
+     const ai = createGeminiClient();
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
       contents: [{ parts: [{ text: prompt }] }],
@@ -87,7 +96,7 @@ export async function generateChefReflectionResponse(guestName: string, thought:
   try {
     const prompt = `You are the Executive Chef of Wanderplate. A guest named ${guestName} just left a reflection in your Guestbook: "${thought}". 
     Respond as the Chef with 1-2 sentences. Your tone should be humble, deeply grateful, and evocative of culinary travel. Use terms like "voyage", "palate", or "culinary map".`;
-
+    const ai = createGeminiClient();
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
